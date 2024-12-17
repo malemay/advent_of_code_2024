@@ -38,59 +38,56 @@ move_robot <- function(map, move) {
 	}
 
 	# Last case: moving boxes
+	# We need to isolate the sequence of characters in front of the robot
+	# to determine if and how much the robot is going to move
 	if(item == "O") {
-		# Let us isolate the sequence of characters in front of the robot
-		# The case of moving up
-		if(move[1] == -1) {
-			chars <- map[next_pos[1]:1, next_pos[2]]
+		# The case of vertical movement
+		if(move[1] != 0) {
+			# We can reflect the map along the horizontal axis if going up
+			# This way the manipulations are the same whether
+			# the robot is going up or down
+			if(move[1] == -1) {
+				map <- map[nrow(map):1, ]
+				next_pos[1] <- nrow(map) - next_pos[1] + 1
+				robot[1] <- nrow(map) - robot[1] + 1
+			}
+
+			chars <- map[next_pos[1]:nrow(map), next_pos[2]]
 			nb <- nboxes(chars)
 
-			if(nb == 0) {
-				return(map)
-			} else {
-				map[next_pos[1]:(next_pos[1] - nb), next_pos[2]] <- "O"
+			if(nb > 0) {
+				# Boxes are pushed
+				map[next_pos[1]:(next_pos[1] + nb), next_pos[2]] <- "O"
+				# The robot's initial position is freed
 				map[robot[1], robot[2]] <- "."
+				# The robot moves to its next position
 				map[next_pos[1], next_pos[2]] <- "@"
 			}
+
+			# Reflecting the map back along the horizontal axis (if necessary)
+			if(move[1] == -1) map <- map[nrow(map):1, ]
 		}
-		# The case of moving right
-		else if(move[2] == 1) {
+		# The case of horizontal movement
+		else if(move[2] != 0) {
+			# We reflect the map along the vertical axis if going left
+			if(move[2] == -1) {
+				map <- map[, ncol(map):1]
+				next_pos[2] <- ncol(map) - next_pos[2] + 1
+				robot[2] <- ncol(map) - robot[2] + 1
+			}
+
 			chars <- map[next_pos[1], next_pos[2]:ncol(map)]
 			nb <- nboxes(chars)
 
-			if(nb == 0) {
-				return(map)
-			} else {
+			if(nb > 0) {
 				map[next_pos[1], next_pos[2]:(next_pos[2] + nb)] <- "O"
 				map[robot[1], robot[2]] <- "."
 				map[next_pos[1], next_pos[2]] <- "@"
 			}
-		}
-		# The case of moving down
-		else if(move[1] == 1) {
-			chars <- map[next_pos[1]:nrow(map), next_pos[2]]
-			nb <- nboxes(chars)
 
-			if(nb == 0) {
-				return(map)
-			} else {
-				map[next_pos[1]:(next_pos[1] + nb), next_pos[2]] <- "O"
-				map[robot[1], robot[2]] <- "."
-				map[next_pos[1], next_pos[2]] <- "@"
-			}
-		# The case of moving left
-		} else if(move[2] == -1) {
-			chars <- map[next_pos[1], next_pos[2]:1]
-			nb <- nboxes(chars)
-
-			if(nb == 0) {
-				return(map)
-			} else {
-				map[next_pos[1], next_pos[2]:(next_pos[2] - nb)] <- "O"
-				map[robot[1], robot[2]] <- "."
-				map[next_pos[1], next_pos[2]] <- "@"
-			}
-		}
+			# Reflecting the map back along the vertical axis (if necessary)
+			if(move[2] == -1) map <- map[, ncol(map):1]
+		} 
 	}
 
 	return(map)
@@ -113,7 +110,6 @@ nboxes <- function(chars) {
 map_copy <- map
 
 for(i in 1:nchar(moves)) {
-	if(i %% 1000 == 0) message("Processing move ", i)
 	i_move <- substring(moves, i, i)
 	map_copy <- move_robot(map_copy, i_move)
 }
